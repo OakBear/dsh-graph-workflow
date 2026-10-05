@@ -1,0 +1,51 @@
+# 真实宿主挂载验证证据（一次性实例，--port 0；不影响运行中的 3080 GUI）
+# 每次重跑都会重新生成；本文件是最近一次通过后的留档。
+
+[run 1] 修复 fork 血缘之前
+boot: dsh web: http://127.0.0.1:65416/?token=…
+  GET /sgx/graph?session=probe  -> 200 {"error":"session-not-found"}
+  GET /awf/state?session=probe  -> 200 {"ok":false,"code":"not-in-workflow"}
+  preload group plugins/??…dsh-graph-workflow/client.js… -> 200 (10,324,908 bytes)
+    contains: dsh-graph-workflow, dsh-session-graph, dsh-agent-workflow,
+              data-sgx, data-awf, registerTab
+
+[run 2] 修复 fork 血缘之后
+boot: dsh web: http://127.0.0.1:55173/?token=…
+  GET /sgx/graph?session=probe  -> 200 {"error":"session-not-found"}
+  GET /awf/state?session=probe  -> 200 {"ok":false,"code":"not-in-workflow"}
+  stderr/stdout: 无错误无警告
+
+[run 3] 真实会话数据下的功能性验证
+boot: dsh web: http://127.0.0.1:53042/?token=…
+  GET /sgx/graph?session=<真实会话> -> 200, 36,894 bytes
+    workspace.path = C:\desktop\ccwebsite
+    branches = 18   commits = 54   merges = 3
+    merges 正是本次会话执行的三次 swf_integrate：
+      mg-jcjaktr8v5  A=058c973e…  B=session-b85d8e94…
+      mg-swzzbzzx23  A=7f2af2b1…  B=session-b85d8e94…
+      mg-llznc4q6ia  A=a7880ecc…  B=session-b85d8e94…
+    fork 边正确：三个 worker 的 parentId 均指向 director，commitCount 各为 1
+  preload group -> 200 (10,360,334 bytes)
+    contains: dsh-graph-workflow, dsh-session-graph, dsh-agent-workflow,
+              data-sgx, data-awf, registerTab
+
+[run 4] 补上图谱平面「挂载时补扫」之后
+boot: dsh web: http://127.0.0.1:55206/?token=…
+  boot output: 仅一行 URL
+  error scan (back-fill failed / agent tools failed / agent section failed /
+              coordinator / storage / Error): 无命中
+
+[final] 全部修复到位后（补扫 + 未设防回退 + 溯源 key 识别）
+boot: dsh web: http://127.0.0.1:49307/?token=…
+  boot output: 仅一行 URL
+  GET /sgx/graph?session=probe     -> 200
+  GET /awf/state?session=probe     -> 200
+  GET /sgx/settings?session=probe  -> 200
+  GET /sgx/graph?session=<真实会话> -> 200
+      branches=18  commits=54  merges=3   （workspace=C:\desktop\ccwebsite）
+  error scan (Error|failed|Cannot|back-fill|coordinator): 无命中
+
+探测注意：抓 URL 的正则必须包含 ?token=…。曾因
+  ($log | Select-String 'http://127\.0\.0\.1:\d+')
+截掉了 token，于是拿空 token 请求而误报 401。正确做法是取整行后切分，
+或使用 -SessionVariable 保持会话。

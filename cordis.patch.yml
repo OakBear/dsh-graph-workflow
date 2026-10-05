@@ -1,0 +1,27 @@
+# dsh-graph-workflow bundle patch: inserts the merged plugin into a profile's
+# layer stack.
+#
+# One row, not three. The three upstream plugins each mounted their own row and
+# declared `sessionGraph` in their own `inject`; here the graph plane provides
+# that service, the orchestration planes consume it in-process, and all three
+# share this row's single activation and lifecycle.
+- insert:
+    - id: dsh-graph-workflow
+      name: 'dsh-graph-workflow'
+      config:
+        # Information-graph plane
+        enableGraph: true
+        injectMerges: true
+        frameMaxChars: 4000
+        cacheTtlMs: 120000
+        # Extraction / summary model usage. Off by default: turning it on sends
+        # turn summaries and merge deltas to the configured provider.
+        autoSummary: false
+        # Provenance: record a structured chain (commit key + event range) for
+        # every extracted proposition, and surface chain health to the model.
+        provenance: true
+        # Peer-session workflow plane (leased manager, WAL composite txns)
+        enableWorkflow: true
+        defaultLeaseMs: 300000
+        # Same-session subagent workflow plane (worktree artifact zones)
+        enableSubagentFlow: true

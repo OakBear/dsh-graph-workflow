@@ -1,0 +1,59 @@
+{
+  "name": "dsh-graph-workflow",
+  "version": "1.0.0",
+  "description": "信息图谱 + 工作流编排三合一插件：会话信息 DAG（branch=会话、commit=一轮、merge=可撤销的分支合入）、对等会话工作流协议（租约管理器 + WAL 事务 + 工时区隔离）、同会话子代理工作流（worktree 工件区 + 台账）。完整继承 dsh-session-graph、dsh-agent-workflow、dsh-subagent-workflow 的全部功能，含 Git 图谱侧栏 GUI 与 Workflow 侧栏 GUI。新增：结构化溯源链（命题 → 提交 key → 原文位置，可反向审计）。",
+  "type": "module",
+  "main": "lib/index.js",
+  "scripts": {
+    "build": "node build.mjs",
+    "test": "node build.mjs && node test/run.js",
+    "test:structure": "node build.mjs && node test/plugin-structure.mjs",
+    "test:host": "node test/verify-fork-contract.mjs",
+    "check": "node --check lib/index.js && node --check lib/graph.js && node --check lib/workflow.js && node --check lib/subagent-flow.js && node --check client.js"
+  },
+  "exports": {
+    ".": "./lib/index.js",
+    "./client": "./client.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib",
+    "client.js",
+    "cordis.patch.yml",
+    "README.md",
+    "LICENSE"
+  ],
+  "license": "MIT",
+  "keywords": [
+    "dsh",
+    "dsh-plugin",
+    "deepseek-harness",
+    "session-graph",
+    "information-dag",
+    "workflow",
+    "subagent",
+    "provenance",
+    "worktree",
+    "agent"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "inject": [
+        "@deepseek-ai/dsh-client-locale",
+        "@deepseek-ai/dsh-client-runtime",
+        "@deepseek-ai/dsh-client-ui-conversation",
+        "dsh-better-sidebar"
+      ]
+    }
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "^4.0.1"
+  },
+  "engines": {
+    "dsh": ">=0.1.1-rc.1 <0.2.0"
+  }
+}
